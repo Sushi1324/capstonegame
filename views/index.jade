@@ -1,0 +1,19 @@
+doctype html
+html
+  head
+    title= title
+    script(src="/js/phaser.min.js")
+    script(src="/js/socket.io.js")
+    style(type="text/css").
+      canvas {
+        display: block;
+        margin: 0;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+  body
+    script(src="/js/network.js")
+    script(src="/js/game.js")
+    
