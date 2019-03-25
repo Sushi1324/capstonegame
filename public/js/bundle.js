@@ -86,19 +86,29 @@ class Board extends Phaser.Scene {
         
         this.input.keyboard.on('keydown_T', function (event) {
             
+            if (mouseAction == "L") {
+                tempImage[tempImage.length - 1].destroy();
+            }
+            if (mouseAction != "T") {
+                var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
+                mouse = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
+            
+                tempImage.push(game.scene.scenes[0].add.image(mouse.x, mouse.y-15, "trans" + user.color.name).setAlpha(.5));
+            }
+            
+            
             mouseAction = "T";
-           
-            var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
-            mouse = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
-            
-            tempImage.push(game.scene.scenes[0].add.image(mouse.x, mouse.y-15, "trans" + user.color.name).setAlpha(.5));
-           
-            
         });
         
         this.input.keyboard.on('keydown_L', function (event) {
            
-           mouseAction = "L"; 
+           if (mouseAction == "T") {
+                tempImage[tempImage.length - 1].destroy();
+            }
+           
+           mouseAction = "L";
+           linkTo = -1;
+           
             
         });
         
@@ -119,10 +129,15 @@ class Board extends Phaser.Scene {
                     if (vert.x == mouse.a && vert.y == mouse.b) {
                         if (linkTo != -1) {
                             moves.push({type: "link+", a: linkTo, b:vert.id});
+                            
                             linkTo = -1;
                             mouseAction = "none";
+                            
                         }
                         else {
+                            var temp = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
+                            tempImage.push(game.scene.scenes[0].add.line(0, 0, temp.x, temp.y, temp.x, temp.y, user.color.num, 0.5));
+                            tempImage[tempImage.length-1].setLineWidth(4);
                             linkTo = vert.id;
                         }
                     
@@ -144,6 +159,16 @@ class Board extends Phaser.Scene {
                 
                 var mouse = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
                 tempImage[tempImage.length-1].setPosition(mouse.x, mouse.y-15)
+            }
+            
+            if (mouseAction === "L" && linkTo != -1) {
+                
+                var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
+                var mouse = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
+                
+                tempImage[tempImage.length-1].setDisplayOrigin(0, 0);
+                tempImage[tempImage.length-1].setTo(mouse.x, mouse.y, tempImage[tempImage.length-1].geom.x2, tempImage[tempImage.length-1].geom.y2);
+                
             }
         });
         
