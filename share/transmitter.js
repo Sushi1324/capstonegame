@@ -18,8 +18,8 @@ var Transmitter = function(x, y, id) {
         n.links.push(this.id);
     };
     
-    this.dfs = function(verts, path) {
-        var cycles = [];
+    this.dfs = function(verts, path, cycles) {
+        if (path.length == 3) return [];
         this.visited = true;
         path.push(this.id);
         for (var x in this.links) {
@@ -30,14 +30,13 @@ var Transmitter = function(x, y, id) {
                     cycles.push(path.slice(path.indexOf(n), path.length));
                 }
                 else {
-                    cycles = cycles.concat(verts[n].dfs(verts, path));
+                    cycles = cycles.concat(verts[n].dfs(verts, path, []));
                 }
             }
             
         }
         path.pop();
         this.visited = false;
-        
         
         var out = [];
         var check = [];
