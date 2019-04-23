@@ -185,6 +185,14 @@ config.scene = [Board, HUD];
 var Transmitter = require("../../share/transmitter");
 var Network = require("./network");
 
+var h = window.innerHeight;
+var w = window.innerWidth;
+if (h * 16/9 > w) h = w / (16/9);
+else w = h * 16/9;
+config.width = w;
+config.height = h;
+
+
 game = new Phaser.Game(config);
 
 HUD = game.scene.scenes[1];

@@ -2,18 +2,113 @@ doctype html
 html
   head
     title= title
-    script(src="/js/phaser.min.js")
-    script(src="/js/socket.io.js")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    
+    
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css")
+    
     style(type="text/css").
-      canvas {
-        display: block;
-        margin: 0;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+      body {
+        background-color: black;
       }
+      h1, h3, h4, label, span {
+        color: #AAA;
+        text-align: center;
+        font-family: "Trebuchet MS";
+        font-size: 36pt;
+      }
+      h3 {
+        font-size: 24pt;
+      }
+      label, h4 {
+        font-size: 18pt;
+      }
+      .custom-file-upload, .custom-submit-button {
+          border: 1px solid #ccc;
+          display: inline-block;
+          padding: 6px 12px;
+          cursor: pointer;
+      }
+      div {
+         text-align: center;
+         padding: 5%;
+      }
+      input {
+        font-family: "Trebuchet MS";
+        border-radius: 5px;
+        padding: 10px;
+        text-align: center;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      
+      
+      #room {
+        width: 240px;
+        font-size: 24pt;
+        
+      }
+      .right {
+        border-left: 2px solid #AAA
+      }
+
+      
+      
+      
+      
+    script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js")
+    script(src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js") 
+    
+    script(src="/js/socket.io.js")
+    script(src="/js/index.js")
+      
+      
+    
+       
+    
+    
   body
-    script(src="/js/global.js")
-    script(src="/js/bundle.js")
+    div(id="uploaded", class="modal fade", role="dialog")
+      div(class="modal-dialog")
+        div(class="modal-content")
+          div(class="modal-header")
+            h4(class="modal-title")
+          div(class="modal-body")
+            p Would you like to upload this game?
+          div(class="modal-footer")
+            button(type="button", class="btn btn-danger pull-left", data-dismiss="modal") Cancel
+            button(type="button", class="btn btn-info upload-submit") Upload
+            
+    div
+      h1 Soveriegn Oversight
+      
+      
+      div(class="row")
+        div(class="col-md-6")
+          h3 Join Existing Room
+          form(action="javascript:joinRoom()")
+            input(type="text", id="room", placeholder="Room ID")
+            
+        div(class="col-md-6 right")
+          h3 Create New Game
+          form(action="javascript:createRoom()")
+            label(for="boardsize") Board Size: 
+            input(type="number", min="15", max="100", name="boardsize", id="boardsize")
+
+            br
+            label(for="players") Max Number of Players: 
+            input(type="number", min="2", max="12", name="players", id = "players")
+            br
+            
+            h4(class="custom-submit-button") Create
+          h3 OR
+          form(action="javascript:uploadRoom()") 
+            label(for="saved", class="custom-file-upload") Upload Saved Game
+            input(type="file", id="saved", accept=".sog")
+            
+            
+    
+        
+  
     

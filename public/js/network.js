@@ -13,9 +13,19 @@ function network() {
 
     var socket = io().connect();
     
+    socket.on("invalid", function() {
+        alert("Invalid Room");
+        window.location = "/";
+    });
+    
     
     socket.on("init", function(data) {
-        socket.emit('join', "1234", "Player");
+        var room = window.location.pathname.slice(6);
+        var pos = room.indexOf('/');
+        if (pos != -1) room = room.slice(pos);
+        
+        
+        socket.emit('join', room, "Player");
     });
     
     socket.on("test", function(data) {
@@ -48,6 +58,9 @@ function network() {
         
         scoreboard[0] = HUD.add.text(50, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
         
+        var controls = HUD.add.text(50, config.height - 100, "Press \"T\" to create a new Transmitter\nPress \"L\" to form a new link between existing transmitters", {color: user.color.hex, fontsize: 24});
+        controls.setStroke("#444444", 2);
+        
     });
     
     socket.on("update", function(game) {
@@ -69,8 +82,7 @@ function network() {
                 verts: [],
                 
             },
-            
-            
+
         };
         
         var scores = [];
@@ -102,13 +114,33 @@ function network() {
             if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
             scoreboard[i + 1].setText(scores[i].name + ": " + scores[i].score);
             scoreboard[i+1].setColor(scores[i].color);
+            scoreboard[i+1].setStroke("#444444", 2);
+            if (scoreboard[i+2]) scoreboard[i+2].setColor("#000000");
         }
         
         
         
     });
     
+    socket.on("download", (game) => { 
+        downloadObjectAsFile(game, "game.sog");
+    });
+    
+    
     return socket;
 }
 
 module.exports = network;
+
+
+//https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
+function downloadObjectAsFile(exportObj, exportName){
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(exportObj);
+    var downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href",     dataStr);
+    downloadAnchorNode.setAttribute("download", exportName);
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+}

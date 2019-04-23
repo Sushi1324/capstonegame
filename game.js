@@ -8,11 +8,13 @@ var run = (http) => {
     
     
     
+    var ENCRYPTION_KEY = "SUp3rK3y"; //Obviously public on GitHub, would need to be changed in actual production, but just for securing saved files;s
     var COLORS = require("./colors");
     
+    var Crypter = require("cryptr");
+    var cryptr = new Crypter(ENCRYPTION_KEY);
     
     
-    var BOARDSIZE = 25;
     
     
     io.on('connection', function(socket){
@@ -23,105 +25,139 @@ var run = (http) => {
       
       socket.game = {};
       
+      socket.on("upload", function(data) {
+        while (true) {
+          var room = Math.round(Math.random() * 100000);
+          if (!rooms[room]) {
+            rooms[room] = JSON.parse(cryptr.decrypt(data));
+            rooms[room].room = room;
+            socket.emit("go to", room);
+            break;
+          }
+        }
+        
+      });
+      
+      socket.on("create", function(boardsize, playersize) {
+        while (true) {
+          var room = Math.round(Math.random() * 100000);
+          if (!rooms[room]) {
+            rooms[room] = {
+              players: {},
+              boardsize: boardsize,
+              turn: 0,
+              playersize: playersize,
+              started: false
+            };
+            rooms[room].room = room;
+            socket.emit("go to", room);
+            break;
+          }
+        }
+      });
+      
       socket.on('join', function(room, name) {
-        socket.gameID = Math.random().toString();
-        socket.join(room);
+        
         if (!rooms[room]) {
-          rooms[room] = {
-            players: {},
-            boardsize: BOARDSIZE,
-            turn: 0
-          };
+          socket.emit("invalid");
+          setTimeout(() => socket.disconnect(true), 5000);
+          
           
         }
-        socket.game.name = name;
-        
-        game = rooms[room];
-        
-        
-        socket.game.tiles = [];
-        socket.game.units = [];
-        socket.game.verts = [];
-        socket.game.edges = [];
-        
-        socket.game.color = COLORS[Math.trunc(Math.random() * COLORS.length)];
-        
-        socket.emit("user data", {color: socket.game.color, id: socket.gameID});
-        
-        socket.game.room = room;
-        
-        var base = {};
-        
-        
-        
-        var invalid = true;
-        var counter = 0;
-        
-        while (invalid && counter < 1000) {
-          invalid = false;
-          socket.game.verts = [];
-          
-          base.x = Math.trunc(Math.random() * (2 * game.boardsize - 4)) + 2;
-          base.y = Math.trunc(Math.random() * (2 * game.boardsize - 5)) + 3;
-          base.up = (Math.random() > 0.5);
-        
-          if (base.up) {
-            
-            socket.game.verts.push(new Transmitter(base.x-2, base.y-1, 0));
-            socket.game.verts.push(new Transmitter(base.x+2, base.y-1, 1));
-            socket.game.verts.push(new Transmitter(base.x+2, base.y+3, 2));
-            
-          }
-          
-          else {
-            socket.game.verts.push(new Transmitter(base.x+3, base.y+1, 0));
-            socket.game.verts.push(new Transmitter(base.x-1, base.y-3, 1));
-            socket.game.verts.push(new Transmitter(base.x-1, base.y+1, 2));
-            
-          }
-          
-          invalid = (socket.game.verts[2].x < game.boardsize + 1 && socket.game.verts[2].y > game.boardsize + socket.game.verts[2].x) || (socket.game.verts[1].x > game.boardsize && socket.game.verts[1].y < socket.game.verts[1].x - game.boardsize);
-          
-          invalid = !(!invalid && validLink(socket.game, game.players, 0, 1, game.boardsize) && validLink(socket.game, game.players, 0, 2, game.boardsize) && validLink(socket.game, game.players, 1, 2, game.boardsize));
-          
-          invalid = !(!invalid && validTrans(socket.game, game.players, socket.game.verts[0]) && validTrans(socket.game, game.players, socket.game.verts[1]) && validTrans(socket.game, game.players, socket.game.verts[2]));
-          
-          counter++;
-        }
-        
-        
-        if (counter < 1000) {
-        
-          link(socket.game, game.players, 0, 1, game.boardsize);
-          link(socket.game, game.players, 0, 2, game.boardsize);
-          link(socket.game, game.players, 1, 2, game.boardsize);
-          
-          
-          socket.game.fields = (socket.game.verts[0].dfs(socket.game.verts, [], []));
-          
-          socket.game.tiles[0] = base;
-          
-          game.players[socket.gameID] = socket.game;
-        }
-        
         
         else {
-          console.log("server full");
+        
+          socket.gameID = Math.random().toString();
+          socket.join(room);
+          
+          socket.game.name = name;
+          
+          game = rooms[room];
+          
+          
+          socket.game.tiles = [];
+          socket.game.units = [];
           socket.game.verts = [];
+          socket.game.edges = [];
+          
+          socket.game.color = COLORS[Math.trunc(Math.random() * COLORS.length)];
+          
+          socket.emit("user data", {color: socket.game.color, id: socket.gameID});
+          
+          socket.game.room = room;
+          
+          var base = {};
+          
+          
+          
+          var invalid = true;
+          var counter = 0;
+          
+          while (invalid && counter < 1000) {
+            invalid = false;
+            socket.game.verts = [];
+            
+            base.x = Math.trunc(Math.random() * (2 * game.boardsize - 4)) + 2;
+            base.y = Math.trunc(Math.random() * (2 * game.boardsize - 5)) + 3;
+            base.up = (Math.random() > 0.5);
+          
+            if (base.up) {
+              
+              socket.game.verts.push(new Transmitter(base.x-2, base.y-1, 0));
+              socket.game.verts.push(new Transmitter(base.x+2, base.y-1, 1));
+              socket.game.verts.push(new Transmitter(base.x+2, base.y+3, 2));
+              
+            }
+            
+            else {
+              socket.game.verts.push(new Transmitter(base.x+3, base.y+1, 0));
+              socket.game.verts.push(new Transmitter(base.x-1, base.y-3, 1));
+              socket.game.verts.push(new Transmitter(base.x-1, base.y+1, 2));
+              
+            }
+            
+            invalid = (socket.game.verts[2].x < game.boardsize + 1 && socket.game.verts[2].y > game.boardsize + socket.game.verts[2].x) || (socket.game.verts[1].x > game.boardsize && socket.game.verts[1].y < socket.game.verts[1].x - game.boardsize);
+            
+            invalid = !(!invalid && validLink(socket.game, game.players, 0, 1, game.boardsize) && validLink(socket.game, game.players, 0, 2, game.boardsize) && validLink(socket.game, game.players, 1, 2, game.boardsize));
+            
+            invalid = !(!invalid && validTrans(socket.game, game.players, socket.game.verts[0]) && validTrans(socket.game, game.players, socket.game.verts[1]) && validTrans(socket.game, game.players, socket.game.verts[2]));
+            
+            counter++;
+          }
+          
+          
+          if (counter < 1000) {
+          
+            link(socket.game, game.players, 0, 1, game.boardsize);
+            link(socket.game, game.players, 0, 2, game.boardsize);
+            link(socket.game, game.players, 1, 2, game.boardsize);
+            
+            
+            socket.game.fields = (socket.game.verts[0].dfs(socket.game.verts, [], []));
+            
+            socket.game.tiles[0] = base;
+            
+            game.players[socket.gameID] = socket.game;
+          }
+          
+          
+          else {
+            console.log("server full");
+            socket.game.verts = [];
+          }
+          
+          
+          socket.game.score = calculateScore(socket.game.fields, game.boardsize, socket.game.verts);
+          
+          socket.emit("init game", {
+            boardsize: rooms[room].boardsize,
+            base: base
+          });
+          
+          
+          io.to(socket.game.room).emit("update", game);
+        
         }
-        
-        
-        socket.game.score = calculateScore(socket.game.fields, game.boardsize, socket.game.verts);
-        
-        socket.emit("init game", {
-          boardsize: rooms[room].boardsize,
-          base: base
-        });
-        
-        
-        io.to(socket.game.room).emit("update", game);
-        
-        
       });
       
       socket.on("turn", (moves) => {
@@ -164,6 +200,14 @@ var run = (http) => {
         
           
         
+        
+      });
+      
+      socket.on("download", () => {
+        var out = cryptr.encrypt(JSON.stringify(game));
+        socket.emit("download", out);
+      });
+      socket.on("upload", (data) => {
         
       });
       
