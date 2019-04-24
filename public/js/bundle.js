@@ -436,17 +436,17 @@ module.exports = {
     updateMoves: updateMoves
 };
 },{"../../share/coords":5,"./config.js":1}],4:[function(require,module,exports){
-function network() {
+var createBoard = require("./draw").createBoard;
+var drawBoard = require("./draw").drawBoard;
+var drawVerts = require("./draw").drawVerts;
+var drawFields = require("./draw").drawFields;
+var drawEdges = require("./draw").drawEdges;
+var updateMoves = require("./draw").updateMoves;
 
-    var createBoard = require("./draw").createBoard;
-    var drawBoard = require("./draw").drawBoard;
-    var drawVerts = require("./draw").drawVerts;
-    var drawFields = require("./draw").drawFields;
-    var drawEdges = require("./draw").drawEdges;
-    var updateMoves = require("./draw").updateMoves;
-    
-    var simCoords = require("../../share/coords");
-    var config = require("./config");
+var simCoords = require("../../share/coords");
+var config = require("./config");
+
+function network() {
     
 
     var socket = io().connect();
@@ -490,82 +490,48 @@ function network() {
         var button = HUD.add.sprite(config.width - 100, config.height - 100, "button").setInteractive();
         button.on("pointerdown", function() {
             socket.emit("turn", moves);
-            moves = [];
-            updateMoves(moves, game.scene.scenes[1]);
-            for (var i in tempImage) {
-                tempImage[i].destroy();
-            }
-            tempImage = [];
+            
+            
         });
         
         
-        scoreboard[0] = HUD.add.text(50, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
+        scoreboard[0] = HUD.add.text(45, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
         
         var controls = HUD.add.text(50, config.height - 100, "Press \"T\" to create a new Transmitter\nPress \"L\" to form a new link between existing transmitters", {color: user.color.hex, fontsize: 24});
+        
+        turn = HUD.add.text(config.width-150, config.height - 50, "Turn: 0", {color:"#AAAAAA", fontSize: 24, align: "center"});
         controls.setStroke("#444444", 2);
         
     });
     
     socket.on("update", function(game) {
         
+        console.log(game);
         
-        for (var i in players.graphics.verts) {
-            players.graphics.verts[i].destroy();
-        }
-        
-        
-        
-        graphics.clear();
-        
-        drawBoard();
-        
-        players = {
-            
-            graphics: {
-                verts: [],
-                
-            },
+        update(game);
 
-        };
         
-        var scores = [];
-        
-        for (var i in game.players) {
-            
-            players[i] = {};
-            players[i].verts = game.players[i].verts;
-            players[i].edges = [];
-            players[i].fields = [];
-            players[i].color = game.players[i].color;
-
-
-            scores.push({name: game.players[i].name, color: game.players[i].color.hex, score: game.players[i].score});
-            
-            drawVerts(game.players[i].verts, players[i]);
-            drawFields(game.players[i].fields, players[i]);
-            drawEdges(game.players[i].edges, players[i]);
+    });
     
+    
+    socket.on("end turn", function(g) {
+        update(g);
+        
+        moves = [];
+        updateMoves(moves, game.scene.scenes[1]);
+        for (var i in tempImage) {
+            tempImage[i].destroy();
         }
-        
-        scores.sort(function(a, b) {
-           return (b.score - a.score); 
-        });
-        
-        
-        for (var i in scores) {
-            if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
-            scoreboard[i + 1].setText(scores[i].name + ": " + scores[i].score);
-            scoreboard[i+1].setColor(scores[i].color);
-            scoreboard[i+1].setStroke("#444444", 2);
-            if (scoreboard[i+2]) scoreboard[i+2].setColor("#000000");
-        }
-        
-        
-        
+        tempImage = [];
     });
     
     socket.on("download", (game) => { 
         downloadObjectAsFile(game, "game.sog");
+    });
+    
+    socket.on("user taken", () => {
+        alert("Name already taken");
+        //setTimeout(()=>{location.reload();}, 3000);
     });
     
     
@@ -573,6 +539,65 @@ function network() {
 }
 
 module.exports = network;
+
+
+function update(game) {
+    
+    console.log(game);
+    
+    for (var i in players.graphics.verts) {
+        players.graphics.verts[i].destroy();
+    }
+    
+    
+    
+    graphics.clear();
+    
+    drawBoard();
+    
+    players = {
+        
+        graphics: {
+            verts: [],
+            
+        },
+
+    };
+    
+    var scores = [];
+    
+    for (var i in game.players) {
+        
+        players[i] = {};
+        players[i].verts = game.players[i].verts;
+        players[i].edges = [];
+        players[i].fields = [];
+        players[i].color = game.players[i].color;
+
+
+        scores.push({name: game.players[i].name, color: game.players[i].color.hex, score: game.players[i].score});
+        
+        drawVerts(game.players[i].verts, players[i]);
+        drawFields(game.players[i].fields, players[i]);
+        drawEdges(game.players[i].edges, players[i]);
+
+    }
+    
+    scores.sort(function(a, b) {
+       return (b.score - a.score); 
+    });
+    
+    
+    for (var i in scores) {
+        if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
+        scoreboard[i + 1].setText(scores[i].name + ": " + scores[i].score);
+        scoreboard[i+1].setColor(scores[i].color);
+        scoreboard[i+1].setStroke("#444444", 2);
+        if (scoreboard[i+2]) scoreboard[i+2].setColor("#000000");
+    }
+    
+    turn.setText("Turn: " + game.turn);
+}
 
 
 //https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser

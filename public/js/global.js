@@ -21,6 +21,7 @@ var maxZoom;
 var moves = [];
 var moveList = [];
 var scoreboard = [];
+var turn;
 var tempImage = [];
 
 
