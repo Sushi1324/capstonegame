@@ -105,7 +105,6 @@ module.exports = network;
 
 function update(game) {
     
-    console.log(game);
     
     for (var i in players.graphics.verts) {
         players.graphics.verts[i].destroy();

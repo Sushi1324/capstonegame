@@ -28,11 +28,17 @@ class Board extends Phaser.Scene {
         
         var mouseAction = "none";
         var linkTo = -1;
+        
+        var dragging = false;
+        
+        var pos;
 
         
         graphics = this.add.graphics({ lineStyle: { width: 2, color: 0x444444 }, fillStyle: {color: 0x00ff00} });
         
         socket = Network();
+        
+        this.input.mouse.disableContextMenu();
         
         
         this.input.keyboard.on('keydown_MINUS', function (event) {
@@ -102,35 +108,52 @@ class Board extends Phaser.Scene {
         
         this.input.on('pointerdown', function (pointer) {
           
+          
+            
             var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
-    
-    
-            if (mouseAction === "T") {
-                moves.push({type: "trans+", x:mouse.a, y:mouse.b});
-                mouseAction = "none";
+
+            if (pointer.buttons == 1) {
+                if (mouseAction === "T") {
+                    moves.push({type: "trans+", x:mouse.a, y:mouse.b});
+                    mouseAction = "none";
+                    
+                }
                 
+                if (mouseAction === "L") {
+                    for (var v in players[user.id].verts) {
+                        var vert = players[user.id].verts[v];
+                        if (vert.x == mouse.a && vert.y == mouse.b) {
+                            if (linkTo != -1) {
+                                moves.push({type: "link+", a: linkTo, b:vert.id});
+                                
+                                linkTo = -1;
+                                mouseAction = "none";
+                                
+                            }
+                            else {
+                                var temp = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
+                                tempImage.push(game.scene.scenes[0].add.line(0, 0, temp.x, temp.y, temp.x, temp.y, user.color.num, 0.5));
+                                tempImage[tempImage.length-1].setLineWidth(4);
+                                linkTo = vert.id;
+                            }
+                        
+                        }
+                    }
+                    
+                }
             }
             
-            if (mouseAction === "L") {
-                for (var v in players[user.id].verts) {
-                    var vert = players[user.id].verts[v];
-                    if (vert.x == mouse.a && vert.y == mouse.b) {
-                        if (linkTo != -1) {
-                            moves.push({type: "link+", a: linkTo, b:vert.id});
-                            
-                            linkTo = -1;
-                            mouseAction = "none";
-                            
-                        }
-                        else {
-                            var temp = simCoords(mouse.a, mouse.b, boardsize, config.tilesize);
-                            tempImage.push(game.scene.scenes[0].add.line(0, 0, temp.x, temp.y, temp.x, temp.y, user.color.num, 0.5));
-                            tempImage[tempImage.length-1].setLineWidth(4);
-                            linkTo = vert.id;
-                        }
-                    
-                    }
-                }
+            if (pointer.buttons == 2) {
+                
+                pos = {};
+                pos.cx = (game.scene.scenes[0].cameras.main.scrollX + (config.width/2));//game.scene.scenes[0].cameras.main.zoom;
+                pos.cy = (game.scene.scenes[0].cameras.main.scrollY + (config.height/2));///game.scene.scenes[0].cameras.main.zoom;
+                pos.x = pointer.x;
+                pos.y = pointer.y;
+                dragging = true;
+                
+                console.log(pos);
+                
                 
             }
             
@@ -141,7 +164,25 @@ class Board extends Phaser.Scene {
     
         }, this);
         
+        this.input.on('pointerup', function(pointer) {
+            if (pointer.buttons == 2) {
+                pos = {};
+                dragging = false;
+            }
+        });
+        
         this.input.on('pointermove', function (pointer) {
+            
+            var cam = this.scene.cameras.main;
+            
+            if (dragging == true) {
+                cam.pan(pos.cx + (pos.x-pointer.x)/cam.zoom, pos.cy + (pos.y-pointer.y)/cam.zoom, 10);
+                console.log(config.width);
+                console.log(cam.zoom);
+                console.log(cam.scrollX);
+                console.log(pos);
+            }
+            
             if (mouseAction === "T") {
                 var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
                 
