@@ -22,7 +22,6 @@ class Board extends Phaser.Scene {
     create() {
         var simCoords = require('../../share/coords');
         
-        initColors("trans", this);
         
         var scale = 1/maxZoom;
         var ZOOMSPEED = .8;
@@ -75,8 +74,8 @@ class Board extends Phaser.Scene {
         
         this.input.keyboard.on('keydown_T', function (event) {
             
-            if (mouseAction == "L") {
-                tempImage[tempImage.length - 1].destroy();
+            if (mouseAction == "L" && linkTo != -1) {
+                tempImage[tempImage.length - 1].destroy();  
             }
             if (mouseAction != "T") {
                 var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
@@ -230,64 +229,4 @@ function invMouse(x, y, scale) {
 }
 
 
-function initColors(originalTexture, scene) {
-    
-    
-    hueShift(originalTexture, originalTexture + "Red", 0, scene);
-    hueShift(originalTexture, originalTexture + "Yellow", .166666, scene);
-    hueShift(originalTexture, originalTexture + "Green", .3333, scene);
-    hueShift(originalTexture, originalTexture + "Cyan", .5, scene);
-    hueShift(originalTexture, originalTexture + "Blue", .66666, scene);
-    hueShift(originalTexture, originalTexture + "Magenta", .833333, scene);
-    
-    
-    hueShift(originalTexture, originalTexture + "Red2", 0, scene, .5);
-    hueShift(originalTexture, originalTexture + "Yellow2", .166666, scene, .5);
-    hueShift(originalTexture, originalTexture + "Green2", .3333, scene, .5);
-    hueShift(originalTexture, originalTexture + "Cyan2", .5, scene, .5);
-    hueShift(originalTexture, originalTexture + "Blue2", .66666, scene, .5);
-    hueShift(originalTexture, originalTexture + "Magenta2", .833333, scene, .5);
-}
-
-//Found and adapted from the Phaser example code.
-function hueShift (originalTexture, newTexture, shift, scene, dv = 1)
-{
-    
-    originalTexture = scene.textures.get(originalTexture).getSourceImage();
-
-    newTexture = scene.textures.createCanvas(newTexture, originalTexture.width, originalTexture.height);
-
-    context = newTexture.getSourceImage().getContext('2d');
-
-    context.drawImage(originalTexture, 0, 0);
-    
-    var pixels = context.getImageData(0, 0, originalTexture.width, originalTexture.height);
-
-    for (var i = 0; i < pixels.data.length / 4; i++)
-    {
-        processPixel(pixels.data, i * 4, shift, dv);
-    }
-
-    context.putImageData(pixels, 0, 0);
-
-    newTexture.refresh();
-}
-
-function processPixel (data, index, deltahue, dv)
-{
-    var r = data[index];
-    var g = data[index + 1];
-    var b = data[index + 2];
-
-    var hsv = Phaser.Display.Color.RGBToHSV(r, g, b);
-
-    var h = hsv.h + deltahue;
-    var v = hsv.v * dv;
-
-    var rgb = Phaser.Display.Color.HSVToRGB(h, hsv.s, v);
-
-    data[index] = rgb.r;
-    data[index + 1] = rgb.g;
-    data[index + 2] = rgb.b;
-}
 

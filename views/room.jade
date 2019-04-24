@@ -4,6 +4,9 @@ html
     title= title
     script(src="/js/phaser.min.js")
     script(src="/js/socket.io.js")
+    
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css")
+    
     style(type="text/css").
       body {
         background-color: black;
@@ -16,9 +19,31 @@ html
         left: 50%;
         transform: translate(-50%, -50%);
       }
+      
+    script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js")
+    script(src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js") 
 
       
   body
+    div(id="join", class="modal fade", role="dialog")
+      div(class="modal-dialog")
+        div(class="modal-content")
+          div(class="modal-header")
+            h4(class="modal-title") Join Room
+          div(class="modal-body")
+            div(class="form-group row")
+              div(class="col-sm-3")
+              label(for="players" class="control-label col-sm-3") Name: 
+              div(class="col-sm-3")
+                input(type="text" name="name", id = "name")
+            div(class="form-group row")
+              div(class="col-sm-3")
+              label(for="colors" class="control-label col-sm-3") Color: 
+              div(class="col-sm-4")
+                input(type="range" min="0", max= "359", value="0", id = "color")
+              div(class="col-sm-1", id="colorview", height="10em")
+          div(class="modal-footer")
+            button(type="button", class="btn btn-info", id="join-submit") Join
     script(src="/js/global.js")
     script(src="/js/bundle.js")
     

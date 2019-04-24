@@ -56,7 +56,7 @@ var run = (http) => {
         }
       });
       
-      socket.on('join', function(room, name) {
+      socket.on('join', function(room, name, color) {
         
         if (!rooms[room]) {
           socket.emit("invalid");
@@ -80,7 +80,13 @@ var run = (http) => {
           socket.game.verts = [];
           socket.game.edges = [];
           
-          socket.game.color = COLORS[Math.trunc(Math.random() * COLORS.length)];
+          var rgb = hsl2rgb(color, 1, .5);
+          var num = rgb[0]*255*256*256+rgb[1]*255*256+rgb[2]*255;
+          num = Math.round(num);
+          var hex = num.toString(16);
+          hex = "#" + ("0").repeat(6-hex.length) + hex;
+          
+          socket.game.color = {rgb: rgb, num: num, hex: hex, hue: color/360.0, value:1, name: color.toString()};
           
           socket.emit("user data", {color: socket.game.color, id: socket.gameID});
           
@@ -322,6 +328,14 @@ function calcPolygonArea(vertices) {
 
     return Math.abs(total);
 }
+
+function hsl2rgb(h,s,l) 
+{
+  let a=s*Math.min(l,1-l);
+  let f= (n,k=(n+h/30)%12) => l - a*Math.max(Math.min(k-3,9-k,1),-1);                 
+  return [f(0),f(8),f(4)];
+}   
+
 
 
 module.exports = run;

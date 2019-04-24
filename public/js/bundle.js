@@ -33,7 +33,6 @@ class Board extends Phaser.Scene {
     create() {
         var simCoords = require('../../share/coords');
         
-        initColors("trans", this);
         
         var scale = 1/maxZoom;
         var ZOOMSPEED = .8;
@@ -86,8 +85,8 @@ class Board extends Phaser.Scene {
         
         this.input.keyboard.on('keydown_T', function (event) {
             
-            if (mouseAction == "L") {
-                tempImage[tempImage.length - 1].destroy();
+            if (mouseAction == "L" && linkTo != -1) {
+                tempImage[tempImage.length - 1].destroy();  
             }
             if (mouseAction != "T") {
                 var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
@@ -241,66 +240,6 @@ function invMouse(x, y, scale) {
 }
 
 
-function initColors(originalTexture, scene) {
-    
-    
-    hueShift(originalTexture, originalTexture + "Red", 0, scene);
-    hueShift(originalTexture, originalTexture + "Yellow", .166666, scene);
-    hueShift(originalTexture, originalTexture + "Green", .3333, scene);
-    hueShift(originalTexture, originalTexture + "Cyan", .5, scene);
-    hueShift(originalTexture, originalTexture + "Blue", .66666, scene);
-    hueShift(originalTexture, originalTexture + "Magenta", .833333, scene);
-    
-    
-    hueShift(originalTexture, originalTexture + "Red2", 0, scene, .5);
-    hueShift(originalTexture, originalTexture + "Yellow2", .166666, scene, .5);
-    hueShift(originalTexture, originalTexture + "Green2", .3333, scene, .5);
-    hueShift(originalTexture, originalTexture + "Cyan2", .5, scene, .5);
-    hueShift(originalTexture, originalTexture + "Blue2", .66666, scene, .5);
-    hueShift(originalTexture, originalTexture + "Magenta2", .833333, scene, .5);
-}
-
-//Found and adapted from the Phaser example code.
-function hueShift (originalTexture, newTexture, shift, scene, dv = 1)
-{
-    
-    originalTexture = scene.textures.get(originalTexture).getSourceImage();
-
-    newTexture = scene.textures.createCanvas(newTexture, originalTexture.width, originalTexture.height);
-
-    context = newTexture.getSourceImage().getContext('2d');
-
-    context.drawImage(originalTexture, 0, 0);
-    
-    var pixels = context.getImageData(0, 0, originalTexture.width, originalTexture.height);
-
-    for (var i = 0; i < pixels.data.length / 4; i++)
-    {
-        processPixel(pixels.data, i * 4, shift, dv);
-    }
-
-    context.putImageData(pixels, 0, 0);
-
-    newTexture.refresh();
-}
-
-function processPixel (data, index, deltahue, dv)
-{
-    var r = data[index];
-    var g = data[index + 1];
-    var b = data[index + 2];
-
-    var hsv = Phaser.Display.Color.RGBToHSV(r, g, b);
-
-    var h = hsv.h + deltahue;
-    var v = hsv.v * dv;
-
-    var rgb = Phaser.Display.Color.HSVToRGB(h, hsv.s, v);
-
-    data[index] = rgb.r;
-    data[index + 1] = rgb.g;
-    data[index + 2] = rgb.b;
-}
 
 
 },{"../../share/coords":5,"../../share/transmitter":6,"./config":1,"./draw":3,"./network":4}],3:[function(require,module,exports){
@@ -355,8 +294,9 @@ var drawVerts = (verts, player) => {
         var b = verts[i].y;
         
         var temp = simCoords(a, b, boardsize, config.tilesize);
-
-
+            
+        checkColor(player.color);
+        
         players.graphics.verts.push(game.scene.scenes[0].add.image(temp.x, temp.y-15, "trans" + player.color.name));
         
     }
@@ -437,6 +377,56 @@ var updateMoves = function(moves, scene, color) {
     }
 }
 
+function checkColor(color) {
+    if (loadedImages.indexOf(color.name) == -1) {
+        hueShift("trans", "trans"+color.name, color.hue, game.scene.scenes[0]);
+        loadedImages.push(color.name);
+    }
+}
+
+//Found and adapted from the Phaser example code.
+function hueShift (originalTexture, newTexture, shift, scene, dv = 1)
+{
+    
+    originalTexture = scene.textures.get(originalTexture).getSourceImage();
+
+    newTexture = scene.textures.createCanvas(newTexture, originalTexture.width, originalTexture.height);
+
+    context = newTexture.getSourceImage().getContext('2d');
+
+    context.drawImage(originalTexture, 0, 0);
+    
+    var pixels = context.getImageData(0, 0, originalTexture.width, originalTexture.height);
+
+    for (var i = 0; i < pixels.data.length / 4; i++)
+    {
+        processPixel(pixels.data, i * 4, shift, dv);
+    }
+
+    context.putImageData(pixels, 0, 0);
+
+    newTexture.refresh();
+}
+
+function processPixel (data, index, deltahue, dv)
+{
+    var r = data[index];
+    var g = data[index + 1];
+    var b = data[index + 2];
+
+    var hsv = Phaser.Display.Color.RGBToHSV(r, g, b);
+
+    var h = hsv.h + deltahue;
+    var v = hsv.v * dv;
+
+    var rgb = Phaser.Display.Color.HSVToRGB(h, hsv.s, v);
+
+    data[index] = rgb.r;
+    data[index + 1] = rgb.g;
+    data[index + 2] = rgb.b;
+}
+
+
 module.exports = {
     createBoard: createBoard,
     drawBoard: drawBoard,
@@ -472,8 +462,11 @@ function network() {
         var pos = room.indexOf('/');
         if (pos != -1) room = room.slice(pos);
         
+        $("#join").modal();
+        $("#join-submit").click(function() {
+            socket.emit('join', room, $("#name").val(), $("#color").val());
+        });
         
-        socket.emit('join', room, "Player");
     });
     
     socket.on("test", function(data) {
@@ -486,7 +479,9 @@ function network() {
     });
     
     socket.on("init game", function(data) {
-        console.log(data);
+        
+        $("#join").modal("hide");
+        
         createBoard(data.boardsize);
         var startPoint = simCoords(data.base.x, data.base.y, boardsize, config.tilesize);
         game.scene.scenes[0].cameras.main.centerOn(startPoint.x, startPoint.y);
@@ -556,7 +551,6 @@ function network() {
            return (b.score - a.score); 
         });
         
-        console.log(scores);
         
         for (var i in scores) {
             if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});

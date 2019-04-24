@@ -24,8 +24,11 @@ function network() {
         var pos = room.indexOf('/');
         if (pos != -1) room = room.slice(pos);
         
+        $("#join").modal();
+        $("#join-submit").click(function() {
+            socket.emit('join', room, $("#name").val(), $("#color").val());
+        });
         
-        socket.emit('join', room, "Player");
     });
     
     socket.on("test", function(data) {
@@ -38,7 +41,9 @@ function network() {
     });
     
     socket.on("init game", function(data) {
-        console.log(data);
+        
+        $("#join").modal("hide");
+        
         createBoard(data.boardsize);
         var startPoint = simCoords(data.base.x, data.base.y, boardsize, config.tilesize);
         game.scene.scenes[0].cameras.main.centerOn(startPoint.x, startPoint.y);
@@ -108,7 +113,6 @@ function network() {
            return (b.score - a.score); 
         });
         
-        console.log(scores);
         
         for (var i in scores) {
             if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
