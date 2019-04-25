@@ -94,6 +94,19 @@ class Board extends Phaser.Scene {
             mouseAction = "T";
         });
         
+        this.input.keyboard.on('keydown_D', function (event) {
+            
+            if (mouseAction == "L" && linkTo != -1) {
+                tempImage[tempImage.length - 1].destroy();  
+            }
+            if (mouseAction == "T") {
+                tempImage[tempImage.length - 1].destroy();
+            }
+            
+            
+            mouseAction = "D";
+        });
+        
         this.input.keyboard.on('keydown_L', function (event) {
            
            if (mouseAction == "T") {
@@ -119,9 +132,19 @@ class Board extends Phaser.Scene {
                     
                 }
                 
+                if (mouseAction === "D") {
+                    moves.push({type: "trans-", x:mouse.a, y:mouse.b});
+                    mouseAction = "none";
+                    
+                }
+                
                 if (mouseAction === "L") {
                     for (var v in players[user.id].verts) {
                         var vert = players[user.id].verts[v];
+                        if (vert == 0) {
+                            continue;
+                        }
+                        console.log(v);
                         if (vert.x == mouse.a && vert.y == mouse.b) {
                             if (linkTo != -1) {
                                 moves.push({type: "link+", a: linkTo, b:vert.id});
@@ -152,7 +175,6 @@ class Board extends Phaser.Scene {
                 pos.y = pointer.y;
                 dragging = true;
                 
-                console.log(pos);
                 
                 
             }
@@ -177,10 +199,7 @@ class Board extends Phaser.Scene {
             
             if (dragging == true) {
                 cam.pan(pos.cx + (pos.x-pointer.x)/cam.zoom, pos.cy + (pos.y-pointer.y)/cam.zoom, 10);
-                console.log(config.width);
-                console.log(cam.zoom);
-                console.log(cam.scrollX);
-                console.log(pos);
+
             }
             
             if (mouseAction === "T") {

@@ -23,6 +23,7 @@ var moveList = [];
 var scoreboard = [];
 var turn;
 var tempImage = [];
+var xpBar;
 
 
 var colorInput = document.getElementById("color");

@@ -105,6 +105,19 @@ class Board extends Phaser.Scene {
             mouseAction = "T";
         });
         
+        this.input.keyboard.on('keydown_D', function (event) {
+            
+            if (mouseAction == "L" && linkTo != -1) {
+                tempImage[tempImage.length - 1].destroy();  
+            }
+            if (mouseAction == "T") {
+                tempImage[tempImage.length - 1].destroy();
+            }
+            
+            
+            mouseAction = "D";
+        });
+        
         this.input.keyboard.on('keydown_L', function (event) {
            
            if (mouseAction == "T") {
@@ -130,9 +143,19 @@ class Board extends Phaser.Scene {
                     
                 }
                 
+                if (mouseAction === "D") {
+                    moves.push({type: "trans-", x:mouse.a, y:mouse.b});
+                    mouseAction = "none";
+                    
+                }
+                
                 if (mouseAction === "L") {
                     for (var v in players[user.id].verts) {
                         var vert = players[user.id].verts[v];
+                        if (vert == 0) {
+                            continue;
+                        }
+                        console.log(v);
                         if (vert.x == mouse.a && vert.y == mouse.b) {
                             if (linkTo != -1) {
                                 moves.push({type: "link+", a: linkTo, b:vert.id});
@@ -163,7 +186,6 @@ class Board extends Phaser.Scene {
                 pos.y = pointer.y;
                 dragging = true;
                 
-                console.log(pos);
                 
                 
             }
@@ -188,10 +210,7 @@ class Board extends Phaser.Scene {
             
             if (dragging == true) {
                 cam.pan(pos.cx + (pos.x-pointer.x)/cam.zoom, pos.cy + (pos.y-pointer.y)/cam.zoom, 10);
-                console.log(config.width);
-                console.log(cam.zoom);
-                console.log(cam.scrollX);
-                console.log(pos);
+
             }
             
             if (mouseAction === "T") {
@@ -330,7 +349,10 @@ var drawBoard = () => {
 }
 
 var drawVerts = (verts, player) => {
+    
+    
     for (var i in verts) {
+        if (verts[i] == 0) continue;
         var a = verts[i].x;
         var b = verts[i].y;
         
@@ -414,6 +436,9 @@ var updateMoves = function(moves, scene, color) {
         if (moves[i].type === "link+") {
             message = "Link formed between " + moves[i].a + " and " + moves[i].b;
         }
+        if (moves[i].type === "trans-") {
+            message = "Destroy transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
+        }
         moveList.push(scene.add.text(config.width - 40, config.height - 200 - ((moves.length-i - 1) * 20), message, {color: color, fontSize: 16}).setOrigin(1, 0));
     }
 }
@@ -492,8 +517,8 @@ function network() {
 
     var socket = io().connect();
     
-    socket.on("invalid", function() {
-        alert("Invalid Room");
+    socket.on("invalid", function(m) {
+        alert(m);
         window.location = "/";
     });
     
@@ -538,10 +563,17 @@ function network() {
         
         scoreboard[0] = HUD.add.text(45, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
         
-        var controls = HUD.add.text(50, config.height - 100, "Press \"T\" to create a new Transmitter\nPress \"L\" to form a new link between existing transmitters", {color: user.color.hex, fontsize: 24});
+        var controls = HUD.add.text(50, config.height - 100, "Press \'T\' to create a new Transmitter\nPress \'L\' to form a new link between existing transmitters\nPress \'D\' to delete a transmitter", {color: user.color.hex, fontsize: 24});
         
         turn = HUD.add.text(config.width-150, config.height - 50, "Turn: 0", {color:"#AAAAAA", fontSize: 24, align: "center"});
         controls.setStroke("#444444", 2);
+        
+        xpBar = [HUD.add.rectangle(config.width/2, 30, 400, 20, 0x666666),
+                HUD.add.rectangle(config.width/2-197, 30, 30, 15, user.color.num),
+                HUD.add.text(config.width/2, 30, "0/1024xp", {color:"#222222", fontSize: 18, align: "center"})
+            ];
+        xpBar[1].setOrigin(0, .5);
+        xpBar[2].setOrigin(.5, .5);
         
     });
     
@@ -606,7 +638,11 @@ function update(game) {
     
     var scores = [];
     
+    
+    console.log(game.players);
+    
     for (var i in game.players) {
+        
         
         players[i] = {};
         players[i].verts = game.players[i].verts;
@@ -627,12 +663,15 @@ function update(game) {
        return (b.score - a.score); 
     });
     
+    xpBar[1].width = 394*(game.players[user.id].xp-(Math.trunc(Math.pow(2, game.players[user.id].level-2))*1024))/Math.pow(2, game.players[user.id].level-1)/1024;
+    
+    xpBar[2].setText("Level " + game.players[user.id].level + ": " + game.players[user.id].xp + "/" + Math.pow(2, game.players[user.id].level-1)*1024 + "xp");
     
     for (var i in scores) {
         if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
         scoreboard[i + 1].setText(scores[i].name + ": " + scores[i].score);
         scoreboard[i+1].setColor(scores[i].color);
-        scoreboard[i+1].setStroke("#444444", 2);
+        scoreboard[i+1].setStroke("#444444", 2);    
         if (scoreboard[i+2]) scoreboard[i+2].setColor("#000000");
     }
     
@@ -682,6 +721,15 @@ var Transmitter = function(x, y, id) {
         
         this.links.push(n.id);
         n.links.push(this.id);
+    };
+    
+    this.destroy = function(verts) {
+
+        for (var l in this.links) {
+            
+            verts[this.links[l]].links.splice(verts[this.links[l]].links.indexOf(this.id), 1);
+
+        }
     };
     
     this.dfs = function(verts, path, cycles) {

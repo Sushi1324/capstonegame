@@ -13,8 +13,8 @@ function network() {
 
     var socket = io().connect();
     
-    socket.on("invalid", function() {
-        alert("Invalid Room");
+    socket.on("invalid", function(m) {
+        alert(m);
         window.location = "/";
     });
     
@@ -59,10 +59,17 @@ function network() {
         
         scoreboard[0] = HUD.add.text(45, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
         
-        var controls = HUD.add.text(50, config.height - 100, "Press \"T\" to create a new Transmitter\nPress \"L\" to form a new link between existing transmitters", {color: user.color.hex, fontsize: 24});
+        var controls = HUD.add.text(50, config.height - 100, "Press \'T\' to create a new Transmitter\nPress \'L\' to form a new link between existing transmitters\nPress \'D\' to delete a transmitter", {color: user.color.hex, fontsize: 24});
         
         turn = HUD.add.text(config.width-150, config.height - 50, "Turn: 0", {color:"#AAAAAA", fontSize: 24, align: "center"});
         controls.setStroke("#444444", 2);
+        
+        xpBar = [HUD.add.rectangle(config.width/2, 30, 400, 20, 0x666666),
+                HUD.add.rectangle(config.width/2-197, 30, 30, 15, user.color.num),
+                HUD.add.text(config.width/2, 30, "0/1024xp", {color:"#222222", fontSize: 18, align: "center"})
+            ];
+        xpBar[1].setOrigin(0, .5);
+        xpBar[2].setOrigin(.5, .5);
         
     });
     
@@ -127,7 +134,11 @@ function update(game) {
     
     var scores = [];
     
+    
+    console.log(game.players);
+    
     for (var i in game.players) {
+        
         
         players[i] = {};
         players[i].verts = game.players[i].verts;
@@ -148,12 +159,15 @@ function update(game) {
        return (b.score - a.score); 
     });
     
+    xpBar[1].width = 394*(game.players[user.id].xp-(Math.trunc(Math.pow(2, game.players[user.id].level-2))*1024))/Math.pow(2, game.players[user.id].level-1)/1024;
+    
+    xpBar[2].setText("Level " + game.players[user.id].level + ": " + game.players[user.id].xp + "/" + Math.pow(2, game.players[user.id].level-1)*1024 + "xp");
     
     for (var i in scores) {
         if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});
         scoreboard[i + 1].setText(scores[i].name + ": " + scores[i].score);
         scoreboard[i+1].setColor(scores[i].color);
-        scoreboard[i+1].setStroke("#444444", 2);
+        scoreboard[i+1].setStroke("#444444", 2);    
         if (scoreboard[i+2]) scoreboard[i+2].setColor("#000000");
     }
     

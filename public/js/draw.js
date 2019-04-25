@@ -44,7 +44,10 @@ var drawBoard = () => {
 }
 
 var drawVerts = (verts, player) => {
+    
+    
     for (var i in verts) {
+        if (verts[i] == 0) continue;
         var a = verts[i].x;
         var b = verts[i].y;
         
@@ -127,6 +130,9 @@ var updateMoves = function(moves, scene, color) {
         }
         if (moves[i].type === "link+") {
             message = "Link formed between " + moves[i].a + " and " + moves[i].b;
+        }
+        if (moves[i].type === "trans-") {
+            message = "Destroy transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
         }
         moveList.push(scene.add.text(config.width - 40, config.height - 200 - ((moves.length-i - 1) * 20), message, {color: color, fontSize: 16}).setOrigin(1, 0));
     }

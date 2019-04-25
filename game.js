@@ -44,6 +44,7 @@ var run = (http) => {
       });
       
       socket.on("create", function(boardsize, playersize) {
+        console.log(playersize);
         while (true) {
           var room = Math.round(Math.random() * 100000);
           if (!rooms[room]) {
@@ -63,15 +64,22 @@ var run = (http) => {
       
       socket.on('join', function(room, name, color) {
         
+        
         if (!rooms[room]) {
-          socket.emit("invalid");
+          socket.emit("invalid", "Invalid Room ID");
           setTimeout(() => socket.disconnect(true), 5000);
           
           
         }
         
+        else if (rooms[room].playersize == rooms[room].players.length) {
+          socket.emit("invalid", "Room Full");
+          setTimeout(() => socket.disconnect(true), 5000);
+        }
+        
         
         else {
+        
         
           socket.gameID = Math.random().toString();
           socket.join(room);
@@ -179,6 +187,9 @@ var run = (http) => {
             
             
             socket.game.score = calculateScore(socket.game.fields, game.boardsize, socket.game.verts);
+            socket.game.level = 1;
+            socket.game.energy = 256;
+            socket.game.xp = 0;
             
             
           
@@ -214,11 +225,16 @@ var run = (http) => {
         
         if (done) {
           for (var player in game.players) {
+          
             moves = game.players[player].moves;
+            
             for (var i in moves) {
               if (moves[i].type === "trans+") {
-                var tempVert = new Transmitter(moves[i].x, moves[i].y, game.players[player].verts[game.players[player].verts.length-1].id + 1);
-                if (validTrans(game, game.players, tempVert)) game.players[player].verts.push(tempVert);
+                var tempVert = new Transmitter(moves[i].x, moves[i].y, game.players[player].verts.length);
+                if (validTrans(game, game.players, tempVert)) {
+                  game.players[player].verts.push(tempVert);
+                  game.players[player].xp += 128;
+                }
               }
               
               if (moves[i].type === "link+") {
@@ -227,11 +243,20 @@ var run = (http) => {
                       game.players[player].fields = game.players[player].verts[moves[i].a].dfs(game.players[player].verts, [], game.players[player].fields);
                       
                       game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
-
+                      game.players[player].xp += 256;
                   }
+              }
+              if (moves[i].type === "trans-") {
+                game.players = destroy(game.players, moves[i].x, moves[i].y);
               }
             }
             delete game.players[player].moves;
+            
+            
+            game.players[player].energy += game.players[player].score*4;
+            game.players[player].energy = Math.min(game.players[player].energy, 256*Math.pow(2, game.players[player].level-1));
+            if (game.players[player].xp >= 512) game.players[player].level = Math.floor(Math.log(game.players[player].xp/512)/Math.log(2)) + 1;
+           
           }
           game.turn ++;
           io.to(socket.game.room).emit("end turn", game);
@@ -280,17 +305,61 @@ function link(game, players, a, b, size) {
   }
 }
 
+function destroy(players, a, b) {
+
+  var fields = [];
+  for (var p in players) {
+    for (var l in players[p].verts) {
+      if (players[p].verts[l].x == a && players[p].verts[l].y == b) {
+
+        fields = players[p].fields;
+        var gone = players[p].verts[l].dfs(players[p].verts, [], []);
+        players[p].verts[l].destroy(players[p].verts);
+        var id = players[p].verts[l].id;
+        players[p].verts[l] = 0;
+        for (var f in gone) {
+          for (var i in fields) {
+            if (compArray(gone[f].sort(), fields[i].sort())) {
+              fields.splice(i, 1);
+              players[p].fields = fields;
+              break;
+            }
+          }
+        }
+        for (var e = 0; e < players[p].edges.length; e ++) {
+          if (players[p].edges[e].indexOf(id) != -1) {
+            players[p].edges.splice(e, 1);
+            e--;
+          }
+        }
+        
+      }
+    }
+  }
+  return players;
+}
+
 function validLink(game, players, a, b, size) {
   
   var simCoords = require('./share/coords');
   
+  if (a == b) return false;
+  if (game.verts[a].links.indexOf(b) != -1) return false;
+  
+
+  var v1 = simCoords(game.verts[a].x, game.verts[a].y, size);
+  var v2 = simCoords(game.verts[b].x, game.verts[b].y, size);
+  
+  if (Math.sqrt(Math.pow(v1.x-v2.x, 2) + Math.pow(v1.y-v2.y, 2)) > 800+200*Math.floor(Math.pow(2, game.level-2)) + 15) return false;
+  
   for (var player in players) {
     for (var l in players[player].edges) {
-      var v1 = simCoords(game.verts[a].x, game.verts[a].y, size);
-      var v2 = simCoords(game.verts[b].x, game.verts[b].y, size);
       var v3 = simCoords(players[player].verts[players[player].edges[l][0]].x,players[player].verts[players[player].edges[l][0]].y, size);
       var v4 = simCoords(players[player].verts[players[player].edges[l][1]].x,players[player].verts[players[player].edges[l][1]].y, size);
-      if (intersects(v1.x, v1.y, v2.x, v2.y, v3.x, v3.y, v4.x, v4.y)) {
+      
+      
+      if (intersects(v1.x, v1.y, v2.x, v2.y, v3.x, v3.y, v4.x, v4.y) &&
+          intersects(v3.x, v3.y, v4.x, v4.y, v1.x, v1.y, v2.x, v2.y)) {
         return false;
       }
       
@@ -306,6 +375,7 @@ function validTrans(game, players, vert) {
   
   for (var player in players) {
     for (var l in players[player].verts) {
+      if (players[player].verts[l] == 0) continue;
       if (vert.x == players[player].verts[l].x && vert.y == players[player].verts[l].y) return false;
     }
   }
@@ -368,6 +438,13 @@ function hsl2rgb(h,s,l)
   return [f(0),f(8),f(4)];
 }   
 
+function compArray(a, b) {
+  if (a.length != b.length) return false;
+  for (var i in a) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
 
 
 module.exports = run;

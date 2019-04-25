@@ -6,7 +6,7 @@ function joinRoom() {
 
 function createRoom() {
   console.log("Creating");
-  socket.emit("create", parseInt($("#boardsize").val()), parseInt($("#playersize").val()));
+  socket.emit("create", parseInt($("#boardsize").val()), parseInt($("#players").val()));
 }
 
 
