@@ -95,7 +95,7 @@ class Board extends Phaser.Scene {
             mouseAction = "T";
         });
         
-        this.input.keyboard.on('keydown_D', function (event) {
+        this.input.keyboard.on('keydown_H', function (event) {
             
             if (mouseAction == "L" && linkTo != -1) {
                 tempImage[tempImage.length - 1].destroy();
@@ -106,7 +106,7 @@ class Board extends Phaser.Scene {
             }
             
             
-            mouseAction = "D";
+            mouseAction = "H";
         });
         
         this.input.keyboard.on('keydown_L', function (event) {
@@ -134,10 +134,22 @@ class Board extends Phaser.Scene {
                     
                 }
                 
-                if (mouseAction === "D") {
-                    moves.push({type: "trans-", x:mouse.a, y:mouse.b});
-                    mouseAction = "none";
-                    tempImage.push(null);
+                if (mouseAction === "H") {
+                    
+                    for (var v in players[user.id].verts) {
+                        var vert = players[user.id].verts[v];
+                        if (vert == 0) {
+                            continue;
+                        }
+                        if (vert.x == mouse.a && vert.y == mouse.b) {
+                    
+                            moves.push({type: "heal", x:mouse.a, y:mouse.b});
+                            mouseAction = "none";
+                            tempImage.push(null);
+                            break;
+                        }
+                    }
+                    
                     
                 }
                 

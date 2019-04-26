@@ -50,9 +50,9 @@ html
         div(class="modal-content")
           div(class="modal-header")
             div(class="row")
-              div(class="col-sm-6")
+              div(class="col-sm-4")
                 h4(class="modal-title") Sovereign Oversight
-              div(class="col-sm-3")
+              div(class="col-sm-4")
                 button(type="button", class="btn btn-danger", id="leave") Leave Game
               div(class="col-sm-3")
                 button(type="button", class="btn btn-info", id="download") Download Game
@@ -60,7 +60,7 @@ html
             h4 Background
             p This is an online-multiplayer strategy game focused on capturing and controlling various areas within the game map. These captured zones are used to generate energy for the player each turn--the larger the area, the more energy the player earns. Zones are created by linking transmitters together to form a triangle, and all area within the triangle becomes captured. Players can create transmitters and links each turn, but at the cost of energy. By performing actions, like placing transmitters or capturing areas, a player earns experience, which is used to level up and unlock things like more energy storage. Once the player reaches level 8, they win the game.
             
-            h4 Controls and Specifics
+            h4 Controls
             h6 Moving around the map:
             ul
               li Hold down right-click and use the mouse to drag the map around
@@ -69,7 +69,25 @@ html
             ul
               li Press 'T' to start placing a transmitter. Then click to lock it into place. This costs 128 Energy and grants you 128XP
               li Press 'L' to form a link between two transmitters. Just click on the first transmitter and then one you want to link it with. The links you create are limited in length based on your level. Also, you can't link transmitters placed that turn. This cost 256 Energy and grants you 256XP
-              li Press 'D' to delete a transmitter. This can be either yours or another players, and deleting a transmitter removes all links or fields utilizing it. This costs 1024 Energy and gives you 512XP
+              li Press 'H' and choose a transmitter to heal. This costs 32 Energy and grants you 16XP
+              li Pressing the 'X' shaped button next to one of your moves will delete it from your move list
+              li Press the "End Turn" button to end your turn. Once eveyone completes their turn, the game will continue. Players who have completed their turn will show a green check next to their name on the scoreboard
+            h4 Mechanics:
+            ul
+              li Links can only be formed up to certain lengths, depending on your level. The maximum length for a link is 6 + 2^(Your level) measured in the length of on triangle on the board. This is the list for all levels:
+              ul
+                li Level 1: 8
+                li Level 2: 10
+                li Level 3: 14
+                li Level 4: 22
+                li Level 5: 38
+                li Level 6: 70
+                li Level 7: 134
+              li Any transmitters of enemy players will attack each other each turn if they are within a radius of 4 tiles of each other. The damage and health that transmitters have depends on the level of the player. Transmitters start with 8 health and deal 2 damage, but at each level those numbers double. Healing a transmitter consistently heals 8 health, but players can heal the same transmitter multiple times per turn
+              li A player earns 4 energy per turn for every tile they have control of, but can only store so much energy at a given level
+              li Players can form fields around other fields, regardless of who owns them. This allows for tiles to be counted more than once
+              
+              
           div(class="modal-footer")
             button(type="button", class="btn btn-danger", data-dismiss="modal") Close
     script(src="/js/global.js")

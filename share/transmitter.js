@@ -7,7 +7,7 @@ var Transmitter = function(x, y, id, info = 0) {
     this.active = true;
     this.visited = false;
     
-    this.health = 100;
+    this.health = 8;
     this.level = 1;
     
     this.links = [];

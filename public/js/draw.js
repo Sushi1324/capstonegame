@@ -57,6 +57,11 @@ var drawVerts = (verts, player) => {
         
         players.graphics.verts.push(game.scene.scenes[0].add.image(temp.x, temp.y-15, "trans" + player.color.name));
         
+        if (verts[i].health < 4*Math.pow(2, player.level)) {
+            damages.push(game.scene.scenes[0].add.rectangle(temp.x, temp.y+30, 40, 12, 0x666666));
+            damages.push(game.scene.scenes[0].add.rectangle(temp.x-16, temp.y+30, 32*verts[i].health/4/Math.pow(2, player.level), 6, player.color.num).setOrigin(0, .5));
+        }
+        
     }
     
 }
@@ -133,8 +138,8 @@ var updateMoves = function(moves, scene, color) {
         if (moves[i].type === "link+") {
             message = "Link formed between " + moves[i].a + " and " + moves[i].b;
         }
-        if (moves[i].type === "trans-") {
-            message = "Destroy transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
+        if (moves[i].type === "heal") {
+            message = "Heal transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
         }
         moveList.push(scene.add.text(config.width - 40, config.height - 200 - ((moves.length-i - 1) * 20), message, {color: color, fontSize: 16}).setOrigin(1, 0));
     }

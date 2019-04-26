@@ -153,6 +153,10 @@ function update(game) {
     for (var i in players.graphics.verts) {
         players.graphics.verts[i].destroy();
     }
+    for (var i in damages) {
+        damages[i].destroy();
+    }
+    damages = [];
     
     
     
@@ -182,6 +186,7 @@ function update(game) {
         players[i].edges = [];
         players[i].fields = [];
         players[i].color = game.players[i].color;
+        players[i].level = game.players[i].level;
 
 
         scores.push({name: game.players[i].name, color: game.players[i].color.hex, score: game.players[i].score});

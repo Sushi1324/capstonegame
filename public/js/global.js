@@ -21,6 +21,7 @@ var maxZoom;
 var moves = [];
 var moveList = [];
 var xList = [];
+var damages = [];
 var scores;
 var scoreboard = [];
 var ready = [];

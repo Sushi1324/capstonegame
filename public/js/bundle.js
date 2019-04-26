@@ -105,7 +105,7 @@ class Board extends Phaser.Scene {
             mouseAction = "T";
         });
         
-        this.input.keyboard.on('keydown_D', function (event) {
+        this.input.keyboard.on('keydown_H', function (event) {
             
             if (mouseAction == "L" && linkTo != -1) {
                 tempImage[tempImage.length - 1].destroy();
@@ -116,7 +116,7 @@ class Board extends Phaser.Scene {
             }
             
             
-            mouseAction = "D";
+            mouseAction = "H";
         });
         
         this.input.keyboard.on('keydown_L', function (event) {
@@ -144,10 +144,22 @@ class Board extends Phaser.Scene {
                     
                 }
                 
-                if (mouseAction === "D") {
-                    moves.push({type: "trans-", x:mouse.a, y:mouse.b});
-                    mouseAction = "none";
-                    tempImage.push(null);
+                if (mouseAction === "H") {
+                    
+                    for (var v in players[user.id].verts) {
+                        var vert = players[user.id].verts[v];
+                        if (vert == 0) {
+                            continue;
+                        }
+                        if (vert.x == mouse.a && vert.y == mouse.b) {
+                    
+                            moves.push({type: "heal", x:mouse.a, y:mouse.b});
+                            mouseAction = "none";
+                            tempImage.push(null);
+                            break;
+                        }
+                    }
+                    
                     
                 }
                 
@@ -366,6 +378,11 @@ var drawVerts = (verts, player) => {
         
         players.graphics.verts.push(game.scene.scenes[0].add.image(temp.x, temp.y-15, "trans" + player.color.name));
         
+        if (verts[i].health < 4*Math.pow(2, player.level)) {
+            damages.push(game.scene.scenes[0].add.rectangle(temp.x, temp.y+30, 40, 12, 0x666666));
+            damages.push(game.scene.scenes[0].add.rectangle(temp.x-16, temp.y+30, 32*verts[i].health/4/Math.pow(2, player.level), 6, player.color.num).setOrigin(0, .5));
+        }
+        
     }
     
 }
@@ -442,8 +459,8 @@ var updateMoves = function(moves, scene, color) {
         if (moves[i].type === "link+") {
             message = "Link formed between " + moves[i].a + " and " + moves[i].b;
         }
-        if (moves[i].type === "trans-") {
-            message = "Destroy transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
+        if (moves[i].type === "heal") {
+            message = "Heal transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
         }
         moveList.push(scene.add.text(config.width - 40, config.height - 200 - ((moves.length-i - 1) * 20), message, {color: color, fontSize: 16}).setOrigin(1, 0));
     }
@@ -677,6 +694,10 @@ function update(game) {
     for (var i in players.graphics.verts) {
         players.graphics.verts[i].destroy();
     }
+    for (var i in damages) {
+        damages[i].destroy();
+    }
+    damages = [];
     
     
     
@@ -706,6 +727,7 @@ function update(game) {
         players[i].edges = [];
         players[i].fields = [];
         players[i].color = game.players[i].color;
+        players[i].level = game.players[i].level;
 
 
         scores.push({name: game.players[i].name, color: game.players[i].color.hex, score: game.players[i].score});
@@ -776,7 +798,7 @@ var Transmitter = function(x, y, id, info = 0) {
     this.active = true;
     this.visited = false;
     
-    this.health = 100;
+    this.health = 8;
     this.level = 1;
     
     this.links = [];

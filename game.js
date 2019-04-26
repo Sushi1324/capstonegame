@@ -256,27 +256,70 @@ var run = (http) => {
                     link(game.players[player], game.players, moves[i].a, moves[i].b, game.boardsize);
                     game.players[player].fields = game.players[player].verts[moves[i].a].dfs(game.players[player].verts, [], game.players[player].fields);
                     
-                    game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
                     game.players[player].xp += config.xp.link;
                     game.players[player].energy -= config.energy.link;
                   }
               }
-              if (moves[i].type === "trans-") {
-                if (game.players[player].energy < config.energy.destroy) continue;
-                game.players = destroy(game.players, moves[i].x, moves[i].y);
-                game.players[player].xp += config.xp.destroy;
-                game.players[player].energy -= config.energy.destroy;
+              if (moves[i].type === "heal") {
+                if (game.players[player].energy < config.energy.heal) continue;
+                for (var v in game.players[player].verts) {
+                  if (game.players[player].verts[v].x == moves[i].x && game.players[player].verts[v].y == moves[i].y) {
+                    if (game.players[player].verts[v].health < 4*Math.pow(2, game.players[player].level)) {
+                      game.players[player].verts[v].health += 8;
+                      game.players[player].verts[v].health = Math.max(game.players[player].verts[v].health, 
+                        4*Math.pow(2, game.players[player].level));
+                      
+                      game.players[player].xp += config.xp.heal;
+                      game.players[player].energy -= config.energy.heal;
+                      break;
+                    }
+                  }
+                }
               }
             }
             delete game.players[player].moves;
             
+          }
+          var simCoords = require("./share/coords");
+          for (var player in game.players) {
+            for (var vert in game.players[player].verts) {
+              
+              if (game.players[player].verts[vert] == 0) continue;
+              var v1 = simCoords(game.players[player].verts[vert].x, game.players[player].verts[vert].y, game.boardsize);
+              for (var p in game.players) {
+                if (p == player) continue;
+          
+                
+                for (var v in game.players[p].verts) {
+                  if (game.players[p].verts[v] == 0) continue;
+                  
+                  var v2 = simCoords(game.players[p].verts[v].x, game.players[p].verts[v].y, game.boardsize);
+                  if (Math.sqrt(Math.pow(v1.x-v2.x, 2) + Math.pow(v1.y-v2.y, 2)) < config.damageRadius * 100 + 4) {
+                    game.players[p].verts[v].health -= Math.pow(2, game.players[player].level);
+                    
+                  }
+                }
+              }
+            }
+          }
+          
+          for (var p in game.players) {
+            for (var v in game.players[p].verts) {
+              if (game.players[p].verts[v].health <= 0) destroy(game.players, game.players[p].verts[v].x, game.players[p].verts[v].y);
+            }
           }
           
           for (var player in game.players) {
             game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
             game.players[player].energy += game.players[player].score*4;
             game.players[player].energy = Math.min(game.players[player].energy, 256*Math.pow(2, game.players[player].level-1));
+            var lvl = game.players[player].level;
             if (game.players[player].xp >= 512) game.players[player].level = Math.floor(Math.log(game.players[player].xp/512)/Math.log(2)) + 1;
+            if (lvl != game.players[player].level) {
+              for (var v in game.players[player].verts) {
+                game.players[player].verts[v].health *= 2;
+              }
+            }
           }
           
           game.turn ++;
