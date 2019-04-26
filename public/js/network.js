@@ -25,8 +25,19 @@ function network() {
         if (pos != -1) room = room.slice(pos);
         
         $("#join").modal();
+        $("#color").val(Math.floor(Math.random() * 360));
+        $("#colorview").css({'background-color': 'hsl('+$("#color").val()+', 100%, 50%)'});
         $("#join-submit").click(function() {
             socket.emit('join', room, $("#name").val(), $("#color").val());
+        });
+        
+        $("#download").click(function() {
+           socket.emit('download'); 
+        });
+        
+        $("#leave").click(function() {
+            socket.emit('leave');
+            window.location = "/";
         });
         
     });
@@ -56,13 +67,20 @@ function network() {
             
         });
         
+        var info = HUD.add.rectangle(config.width - 50, 10, 64, 32, 0x000000).setStrokeStyle(2, 0xFFFF00);
+        var infoText = HUD.add.text(config.width-50, 12, "Info", {color:"#FFFF00", fontSize: 16}).setInteractive().setOrigin(.5,.5);
+        
+        infoText.on("pointerdown", function() {
+            $("#info").modal();
+        });
+        
         
         scoreboard[0] = HUD.add.text(45, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24});
         
-        var controls = HUD.add.text(50, config.height - 100, "Press \'T\' to create a new Transmitter\nPress \'L\' to form a new link between existing transmitters\nPress \'D\' to delete a transmitter", {color: user.color.hex, fontsize: 24});
+        //var controls = HUD.add.text(50, config.height - 100, "Press \'T\' to create a new Transmitter\nPress \'L\' to form a new link between existing transmitters\nPress \'D\' to delete a transmitter", {color: user.color.hex, fontsize: 24});
         
         turn = HUD.add.text(config.width-150, config.height - 50, "Turn: 0", {color:"#AAAAAA", fontSize: 24, align: "center"});
-        controls.setStroke("#444444", 2);
+        //controls.setStroke("#444444", 2);
         
         xpBar = [HUD.add.rectangle(config.width/2, 30, 400, 20, 0x666666),
                 HUD.add.rectangle(config.width/2-197, 30, 30, 15, user.color.num),
@@ -70,6 +88,21 @@ function network() {
             ];
         xpBar[1].setOrigin(0, .5);
         xpBar[2].setOrigin(.5, .5);
+        
+        energyBar = [HUD.add.sprite(50, config.height - 50, "energy"),
+                    HUD.add.rectangle(200, config.height-50, 192, 20, 0x7aff7b),
+                    HUD.add.text(200, config.height-50, "0/512 Energy", {color:"#222222", fontSize: 16})];
+        energyBar[2].setOrigin(.5, .5).setStroke("#222222", 1.5);
+        
+        
+    });
+    
+    socket.on("ready", function(notReady) {
+        for (var i in scores) {
+            if (notReady.indexOf(scores[i].name) == -1) {
+                ready.push(HUD.add.sprite(40, 74 + i*24, "check").setOrigin(.5, 0).setScale(.25));
+            }
+        }
         
     });
     
@@ -91,7 +124,11 @@ function network() {
         for (var i in tempImage) {
             tempImage[i].destroy();
         }
+        for (var i in ready) {
+            ready[i].destroy();
+        }
         tempImage = [];
+        
     });
     
     socket.on("download", (game) => { 
@@ -132,7 +169,7 @@ function update(game) {
 
     };
     
-    var scores = [];
+    scores = [];
     
     
     console.log(game.players);
@@ -155,13 +192,20 @@ function update(game) {
 
     }
     
+    for (var n in scoreboard) {
+        scoreboard[n].destroy();
+    }
+    scoreboard = [HUD.add.text(45, 50, "Scoreboard", {color: "#AAAAAA", align: "center", fontSize: 24})];
+    
     scores.sort(function(a, b) {
-       return (b.score - a.score); 
+       return (b.score - a.score);
     });
     
-    xpBar[1].width = 394*(game.players[user.id].xp-(Math.trunc(Math.pow(2, game.players[user.id].level-2))*1024))/Math.pow(2, game.players[user.id].level-1)/1024;
+    xpBar[1].width = 394*(game.players[user.id].xp-(Math.floor(Math.pow(2, game.players[user.id].level-2))*1024))/Math.ceil(Math.pow(2, game.players[user.id].level-2))/1024;
     
     xpBar[2].setText("Level " + game.players[user.id].level + ": " + game.players[user.id].xp + "/" + Math.pow(2, game.players[user.id].level-1)*1024 + "xp");
+    
+    energyBar[2].setText("Energy: " + game.players[user.id].energy + "/" + Math.pow(2, game.players[user.id].level-1)*256);
     
     for (var i in scores) {
         if (!scoreboard[i+1]) scoreboard[i+1] = HUD.add.text(50, 74 + i*24, "Temp", {fontSize: 16, align: "center", color: "#FFFFFF"});

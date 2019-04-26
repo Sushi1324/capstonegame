@@ -121,8 +121,10 @@ var moveList = [];
 var updateMoves = function(moves, scene, color) {
     for (var i in moveList) {
         moveList[i].destroy();
+        xList[i].destroy();
     }
     moveList = [];
+    xList = [];
     for (var i = moves.length-1; i >= 0; i --) {
         var message = "";
         if (moves[i].type === "trans+") {
@@ -135,6 +137,20 @@ var updateMoves = function(moves, scene, color) {
             message = "Destroy transmitter located at x: " + moves[i].x + ", y: " + moves[i].y;
         }
         moveList.push(scene.add.text(config.width - 40, config.height - 200 - ((moves.length-i - 1) * 20), message, {color: color, fontSize: 16}).setOrigin(1, 0));
+    }
+    for (var i in moveList) {
+        
+        xList.push(scene.add.sprite(config.width - 30, config.height - 200 - ((moves.length-i - 1) * 20), 
+            "x").setOrigin(.5,0).setScale(.25).setInteractive().on("pointerdown", 
+            function() {
+                var n = xList.indexOf(this)
+                var move = moves.splice(n, 1)[0];
+                updateMoves(moves, scene, color);
+                if (move.type == "link+" || move.type == "trans+") {
+                    tempImage[n].destroy();
+                    tempImage.splice(n, 1);
+                }
+            }));
     }
 }
 

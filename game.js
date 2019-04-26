@@ -2,6 +2,7 @@ var run = (http) => {
 
     var io = require('socket.io')(http);
     var Transmitter = require('./share/transmitter');
+    var config = require('./share/game-config.js');
     
     
     var rooms = {};
@@ -9,7 +10,7 @@ var run = (http) => {
     
     
     var ENCRYPTION_KEY = "SUp3rK3y"; //Obviously public on GitHub, would need to be changed in actual production, but just for securing saved files;s
-    var COLORS = require("./colors");
+    //var COLORS = require("./colors");
     
     var Crypter = require("cryptr");
     var cryptr = new Crypter(ENCRYPTION_KEY);
@@ -34,6 +35,10 @@ var run = (http) => {
             
             for (var p in rooms[room].players) {
               rooms[room].players[p].inGame = false;
+              for (var t in rooms[room].players[p].verts) {
+                rooms[room].players[p].verts[t] = new Transmitter(0, 0, 0, rooms[room].players[p].verts[t]);
+
+              }
             }
             
             socket.emit("go to", room);
@@ -213,15 +218,21 @@ var run = (http) => {
       
       socket.on("turn", (moves) => {
         socket.game.moves = moves;
-        game.players[socket.gameID] = socket.game;
+        try {
+          game.players[socket.gameID] = socket.game;
+        } catch(e) {
+          setTimeout(() => socket.disconnect(true), 500);
+        }
         
+        var notReady = [];
         var done = true;
         for (var player in game.players) {
           if (!game.players[player].moves) {
             done = false;
-            break;
+            notReady.push(game.players[player].name);
           }
         }
+        io.to(socket.game.room).emit("ready", notReady);
         
         if (done) {
           for (var player in game.players) {
@@ -230,34 +241,44 @@ var run = (http) => {
             
             for (var i in moves) {
               if (moves[i].type === "trans+") {
+                if (game.players[player].energy < config.energy.trans) continue;
                 var tempVert = new Transmitter(moves[i].x, moves[i].y, game.players[player].verts.length);
                 if (validTrans(game, game.players, tempVert)) {
                   game.players[player].verts.push(tempVert);
-                  game.players[player].xp += 128;
+                  game.players[player].xp += config.xp.trans;
+                  game.players[player].energy -= config.energy.trans;
                 }
               }
               
               if (moves[i].type === "link+") {
+                  if (game.players[player].energy < config.energy.link) continue;
                   if(validLink(game.players[player], game.players, moves[i].a, moves[i].b, game.boardsize)) {
-                      link(game.players[player], game.players, moves[i].a, moves[i].b, game.boardsize);
-                      game.players[player].fields = game.players[player].verts[moves[i].a].dfs(game.players[player].verts, [], game.players[player].fields);
-                      
-                      game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
-                      game.players[player].xp += 256;
+                    link(game.players[player], game.players, moves[i].a, moves[i].b, game.boardsize);
+                    game.players[player].fields = game.players[player].verts[moves[i].a].dfs(game.players[player].verts, [], game.players[player].fields);
+                    
+                    game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
+                    game.players[player].xp += config.xp.link;
+                    game.players[player].energy -= config.energy.link;
                   }
               }
               if (moves[i].type === "trans-") {
+                if (game.players[player].energy < config.energy.destroy) continue;
                 game.players = destroy(game.players, moves[i].x, moves[i].y);
+                game.players[player].xp += config.xp.destroy;
+                game.players[player].energy -= config.energy.destroy;
               }
             }
             delete game.players[player].moves;
             
-            
+          }
+          
+          for (var player in game.players) {
+            game.players[player].score = calculateScore(game.players[player].fields, game.boardsize, game.players[player].verts);
             game.players[player].energy += game.players[player].score*4;
             game.players[player].energy = Math.min(game.players[player].energy, 256*Math.pow(2, game.players[player].level-1));
             if (game.players[player].xp >= 512) game.players[player].level = Math.floor(Math.log(game.players[player].xp/512)/Math.log(2)) + 1;
-           
           }
+          
           game.turn ++;
           io.to(socket.game.room).emit("end turn", game);
         }
@@ -271,6 +292,15 @@ var run = (http) => {
       socket.on("download", () => {
         var out = cryptr.encrypt(JSON.stringify(game));
         socket.emit("download", out);
+      });
+      
+      socket.on("leave", () => {
+        try {
+          delete game.players[socket.gameID];
+        } catch(e) {
+          console.log(e);
+        }
+        socket.disconnect(true);
       });
       
       socket.on("disconnect", () => {
@@ -344,6 +374,7 @@ function validLink(game, players, a, b, size) {
   var simCoords = require('./share/coords');
   
   if (a == b) return false;
+  if (game.verts[a] == 0 || game.verts[b] == 0) return false;
   if (game.verts[a].links.indexOf(b) != -1) return false;
   
 

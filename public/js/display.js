@@ -81,7 +81,8 @@ class Board extends Phaser.Scene {
         this.input.keyboard.on('keydown_T', function (event) {
             
             if (mouseAction == "L" && linkTo != -1) {
-                tempImage[tempImage.length - 1].destroy();  
+                tempImage[tempImage.length - 1].destroy();
+                linkTo = -1;
             }
             if (mouseAction != "T") {
                 var mouse = mousePosGrid(game.scene.scenes[0].cameras.main, 1/game.scene.scenes[0].cameras.main.zoom, boardsize, config.tilesize);
@@ -97,7 +98,8 @@ class Board extends Phaser.Scene {
         this.input.keyboard.on('keydown_D', function (event) {
             
             if (mouseAction == "L" && linkTo != -1) {
-                tempImage[tempImage.length - 1].destroy();  
+                tempImage[tempImage.length - 1].destroy();
+                linkTo = -1;
             }
             if (mouseAction == "T") {
                 tempImage[tempImage.length - 1].destroy();
@@ -109,7 +111,7 @@ class Board extends Phaser.Scene {
         
         this.input.keyboard.on('keydown_L', function (event) {
            
-           if (mouseAction == "T") {
+           if (mouseAction == "T" || mouseAction == "L" && linkTo == -1) {
                 tempImage[tempImage.length - 1].destroy();
             }
            
@@ -135,6 +137,7 @@ class Board extends Phaser.Scene {
                 if (mouseAction === "D") {
                     moves.push({type: "trans-", x:mouse.a, y:mouse.b});
                     mouseAction = "none";
+                    tempImage.push(null);
                     
                 }
                 
@@ -144,7 +147,6 @@ class Board extends Phaser.Scene {
                         if (vert == 0) {
                             continue;
                         }
-                        console.log(v);
                         if (vert.x == mouse.a && vert.y == mouse.b) {
                             if (linkTo != -1) {
                                 moves.push({type: "link+", a: linkTo, b:vert.id});
@@ -232,6 +234,9 @@ class HUD extends Phaser.Scene {
     }
     preload() {
         this.load.image('button', "/images/button.png");
+        this.load.image('energy', "/images/energy.png");
+        this.load.image('check', '/images/check.png');
+        this.load.image('x', '/images/X.png');
     }
     create() {
         

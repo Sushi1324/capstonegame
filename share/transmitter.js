@@ -1,4 +1,4 @@
-var Transmitter = function(x, y, id) {
+var Transmitter = function(x, y, id, info = 0) {
     
     this.x = x;
     this.y = y;
@@ -11,6 +11,18 @@ var Transmitter = function(x, y, id) {
     this.level = 1;
     
     this.links = [];
+    
+    if (info != 0) {
+        this.x = info.x;
+        this.y = info.y;
+        this.id = info.id;
+        this.active = info.active;
+        this.visited = info.visited;
+        this.health = info.health;
+        this.level = info.level;
+        this.links = info.links;
+    }
+    
     
     this.addLink = function(n) {
         
@@ -64,5 +76,7 @@ var Transmitter = function(x, y, id) {
     };
     
 };
+
+
 
 module.exports = Transmitter;
