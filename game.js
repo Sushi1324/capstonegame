@@ -245,6 +245,7 @@ var run = (http) => {
                 var tempVert = new Transmitter(moves[i].x, moves[i].y, game.players[player].verts.length);
                 if (validTrans(game, game.players, tempVert)) {
                   game.players[player].verts.push(tempVert);
+                  tempVert.health *= Math.pow(2, game.players[player].level -1);
                   game.players[player].xp += config.xp.trans;
                   game.players[player].energy -= config.energy.trans;
                 }
