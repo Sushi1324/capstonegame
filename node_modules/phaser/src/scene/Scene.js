@@ -1,7 +1,7 @@
 /**
  * @author       Richard Davey <rich@photonstorm.com>
- * @copyright    2018 Photon Storm Ltd.
- * @license      {@link https://github.com/photonstorm/phaser/blob/master/license.txt|MIT License}
+ * @copyright    2019 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
  */
 
 var Class = require('../utils/Class');
@@ -9,14 +9,16 @@ var Systems = require('./Systems');
 
 /**
  * @classdesc
- * [description]
+ * A base Phaser.Scene class which can be extended for your own use.
+ *
+ * You can also define the optional methods {@link Phaser.Types.Scenes.SceneInitCallback init()}, {@link Phaser.Types.Scenes.ScenePreloadCallback preload()}, and {@link Phaser.Types.Scenes.SceneCreateCallback create()}.
  *
  * @class Scene
  * @memberof Phaser
  * @constructor
  * @since 3.0.0
  *
- * @param {(string|Phaser.Scenes.Settings.Config)} config - Scene specific configuration settings.
+ * @param {(string|Phaser.Types.Scenes.SettingsConfig)} config - Scene specific configuration settings.
  */
 var Scene = new Class({
 
@@ -242,13 +244,48 @@ var Scene = new Class({
          * @since 3.0.0
          */
         this.matter;
+
+        if (typeof PLUGIN_FBINSTANT)
+        {
+            /**
+             * A scene level Facebook Instant Games Plugin.
+             * This property will only be available if defined in the Scene Injection Map, the plugin is installed and configured.
+             *
+             * @name Phaser.Scene#facebook
+             * @type {Phaser.FacebookInstantGamesPlugin}
+             * @since 3.12.0
+             */
+            this.facebook;
+        }
+
+        /**
+         * A reference to the global Scale Manager.
+         * This property will only be available if defined in the Scene Injection Map.
+         *
+         * @name Phaser.Scene#scale
+         * @type {Phaser.Scale.ScaleManager}
+         * @since 3.16.2
+         */
+        this.scale;
+
+        /**
+         * A reference to the Plugin Manager.
+         *
+         * The Plugin Manager is a global system that allows plugins to register themselves with it, and can then install
+         * those plugins into Scenes as required.
+         *
+         * @name Phaser.Scene#plugins
+         * @type {Phaser.Plugins.PluginManager}
+         * @since 3.0.0
+         */
+        this.plugins;
     },
 
     /**
      * Should be overridden by your own Scenes.
+     * This method is called once per game step while the scene is running.
      *
      * @method Phaser.Scene#update
-     * @override
      * @since 3.0.0
      *
      * @param {number} time - The current time. Either a High Resolution Timer value if it comes from Request Animation Frame, or Date.now if using SetTimeout.

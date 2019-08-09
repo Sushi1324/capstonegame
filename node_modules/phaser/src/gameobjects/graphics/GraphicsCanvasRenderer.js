@@ -1,7 +1,7 @@
 /**
  * @author       Richard Davey <rich@photonstorm.com>
- * @copyright    2018 Photon Storm Ltd.
- * @license      {@link https://github.com/photonstorm/phaser/blob/master/license.txt|MIT License}
+ * @copyright    2019 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
  */
 
 var Commands = require('./Commands');
@@ -44,8 +44,6 @@ var GraphicsCanvasRenderer = function (renderer, src, interpolationPercentage, c
     var red = 0;
     var green = 0;
     var blue = 0;
-
-    ctx.save();
 
     //  Reset any currently active paths
     ctx.beginPath();
@@ -239,6 +237,7 @@ var GraphicsCanvasRenderer = function (renderer, src, interpolationPercentage, c
         }
     }
 
+    //  Restore the context saved in SetTransform
     ctx.restore();
 };
 

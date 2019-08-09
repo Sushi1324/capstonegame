@@ -1,7 +1,7 @@
 /**
  * @author       Richard Davey <rich@photonstorm.com>
- * @copyright    2018 Photon Storm Ltd.
- * @license      {@link https://github.com/photonstorm/phaser/blob/master/license.txt|MIT License}
+ * @copyright    2019 Photon Storm Ltd.
+ * @license      {@link https://opensource.org/licenses/MIT|MIT License}
  */
 
 var IsInLayerBounds = require('./IsInLayerBounds');
@@ -27,7 +27,7 @@ var GetTileAt = function (tileX, tileY, nonNull, layer)
 
     if (IsInLayerBounds(tileX, tileY, layer))
     {
-        var tile = layer.data[tileY][tileX];
+        var tile = layer.data[tileY][tileX] || null;
         if (tile === null)
         {
             return null;
